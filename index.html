@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meal Planner</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, sans-serif; background: #fdf3ef; color: #222; padding-bottom: 70px; }
+  header { text-align: center; padding: 14px; font-weight: 600; background: #fff; }
+  main { padding: 14px; max-width: 520px; margin: 0 auto; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  input[type=text] { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
+  button { font-size: 16px; padding: 12px; border: 0; border-radius: 10px; background: #6dbb7a; color: #fff; cursor: pointer; }
+  button.full { width: 100%; margin-top: 10px; }
+  button.ghost { background: #fff; color: #3b8f4a; border: 1px solid #6dbb7a; }
+  button.small { padding: 6px 10px; font-size: 14px; }
+  .card { background: #fff; border-radius: 14px; padding: 12px; margin-top: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .card img { width: 100%; border-radius: 10px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
+  .row:last-child { border-bottom: 0; }
+  .row .name { flex: 1; }
+  .done .name { text-decoration: line-through; color: #999; }
+  .results .card { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+  .results img { width: 70px; height: 70px; object-fit: cover; }
+  nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: #fff; border-top: 1px solid #eee; }
+  nav button { flex: 1; background: #fff; color: #555; border-radius: 0; font-size: 14px; }
+  nav button.active { background: #6dbb7a; color: #fff; }
+  .muted { color: #777; font-size: 14px; }
+  .bar { height: 10px; background: #e5e5e5; border-radius: 6px; overflow: hidden; }
+  .bar div { height: 100%; background: #6dbb7a; width: 0; }
+</style>
+</head>
+<body>
+<header id="title">Meal Planner</header>
+<main>
+
+  <!-- SCREEN 1: MEAL PLANNER -->
+  <section id="planner" class="screen active">
+    <input type="text" id="searchBox" placeholder="Search a dish, e.g. black beans and rice">
+    <button class="full" onclick="searchDish()">Search recipes</button>
+    <div id="results" class="results"></div>
+    <div id="recipeView"></div>
+  </section>
+
+  <!-- SCREEN 2: GROCERY LIST -->
+  <section id="grocery" class="screen">
+    <div class="bar"><div id="barFill"></div></div>
+    <p class="muted" id="progressText"></p>
+    <div class="card" id="listBox"></div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <input type="text" id="newItem" placeholder="Add an item">
+      <button onclick="addManual()">Add</button>
+    </div>
+    <button class="full ghost" onclick="clearBought()">Move bought items to pantry</button>
+  </section>
+
+  <!-- SCREEN 3: PANTRY -->
+  <section id="pantry" class="screen">
+    <p class="muted">What you have at home. Tap "Used up" while cooking.</p>
+    <div class="card" id="pantryBox"></div>
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <input type="text" id="newPantry" placeholder="Add to pantry">
+      <button onclick="addPantryManual()">Add</button>
+    </div>
+  </section>
+
+</main>
+
+<nav>
+  <button id="nav-planner" class="active" onclick="show('planner')">Planner</button>
+  <button id="nav-grocery" onclick="show('grocery')">Grocery</button>
+  <button id="nav-pantry" onclick="show('pantry')">Pantry</button>
+</nav>
+
+<script>
+const API = "https://www.themealdb.com/api/json/v1/1/";
+
+// ---------- Saved data (stays on the phone) ----------
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || []; } catch (e) { return []; }
+}
+function save(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+}
+let groceryList = load("groceryList"); // {name, qty, done}
+let pantry = load("pantry");           // {name}
+
+// ---------- Screens ----------
+function show(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(name).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
+  document.getElementById("nav-" + name).classList.add("active");
+  render();
+}
+
+// ---------- Recipe search ----------
+async function searchDish() {
+  const q = document.getElementById("searchBox").value.trim();
+  const box = document.getElementById("results");
+  document.getElementById("recipeView").innerHTML = "";
+  if (!q) return;
+  box.innerHTML = "<p class='muted'>Searching...</p>";
+  try {
+    const res = await fetch(API + "search.php?s=" + encodeURIComponent(q));
+    const data = await res.json();
+    if (!data.meals) {
+      box.innerHTML = "<p class='muted'>No recipes found. Try a simpler word like 'beans' or 'chicken'.</p>";
+      return;
+    }
+    box.innerHTML = data.meals.map(m => `
+      <div class="card" onclick="openRecipe('${m.idMeal}')">
+        <img src="${m.strMealThumb}/preview" alt="">
+        <div><strong>${m.strMeal}</strong><div class="muted">${m.strCategory || ""} ${m.strArea ? "· " + m.strArea : ""}</div></div>
+      </div>`).join("");
+  } catch (e) {
+    box.innerHTML = "<p class='muted'>Could not reach the recipe service. Check your internet.</p>";
+  }
+}
+
+let currentRecipe = null;
+async function openRecipe(id) {
+  try {
+    const res = await fetch(API + "lookup.php?i=" + id);
+    const data = await res.json();
+    const m = data.meals[0];
+    const ingredients = [];
+    for (let i = 1; i <= 20; i++) {
+      const name = (m["strIngredient" + i] || "").trim();
+      const qty = (m["strMeasure" + i] || "").trim();
+      if (name) ingredients.push({ name, qty });
+    }
+    currentRecipe = { title: m.strMeal, ingredients };
+    document.getElementById("results").innerHTML = "";
+    document.getElementById("recipeView").innerHTML = `
+      <div class="card">
+        <img src="${m.strMealThumb}" alt="">
+        <h2>${m.strMeal}</h2>
+        <h3>Ingredients</h3>
+        <ul>${ingredients.map(x => `<li>${x.qty} ${x.name}</li>`).join("")}</ul>
+        <button class="full" onclick="addRecipeToList()">+ Add ingredients to Grocery List</button>
+        <h3>Instructions</h3>
+        <p style="white-space:pre-wrap">${m.strInstructions}</p>
+      </div>`;
+  } catch (e) {
+    alert("Could not load that recipe.");
+  }
+}
+
+// ---------- Core logic: recipe ingredients minus pantry ----------
+function has(list, name) {
+  return list.some(x => x.name.toLowerCase() === name.toLowerCase());
+}
+function addRecipeToList() {
+  let added = 0, skipped = 0;
+  currentRecipe.ingredients.forEach(ing => {
+    if (has(pantry, ing.name)) { skipped++; return; }
+    if (has(groceryList, ing.name)) return;
+    groceryList.push({ name: ing.name, qty: ing.qty, done: false });
+    added++;
+  });
+  save("groceryList", groceryList);
+  alert(added + " added to your list. " + skipped + " skipped because you already have them.");
+  show("grocery");
+}
+
+// ---------- Grocery list ----------
+function toggleItem(i) {
+  groceryList[i].done = !groceryList[i].done;
+  save("groceryList", groceryList);
+  render();
+}
+function removeItem(i) {
+  groceryList.splice(i, 1);
+  save("groceryList", groceryList);
+  render();
+}
+function addManual() {
+  const box = document.getElementById("newItem");
+  const name = box.value.trim();
+  if (!name || has(groceryList, name)) return;
+  groceryList.push({ name, qty: "", done: false });
+  box.value = "";
+  save("groceryList", groceryList);
+  render();
+}
+function clearBought() {
+  groceryList.filter(x => x.done).forEach(x => {
+    if (!has(pantry, x.name)) pantry.push({ name: x.name });
+  });
+  groceryList = groceryList.filter(x => !x.done);
+  save("groceryList", groceryList);
+  save("pantry", pantry);
+  render();
+}
+
+// ---------- Pantry ----------
+function usedUp(i) {
+  pantry.splice(i, 1);
+  save("pantry", pantry);
+  render();
+}
+function addPantryManual() {
+  const box = document.getElementById("newPantry");
+  const name = box.value.trim();
+  if (!name || has(pantry, name)) return;
+  pantry.push({ name });
+  box.value = "";
+  save("pantry", pantry);
+  render();
+}
+
+// ---------- Draw the lists ----------
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function render() {
+  const total = groceryList.length;
+  const done = groceryList.filter(x => x.done).length;
+  document.getElementById("barFill").style.width = total ? (done / total * 100) + "%" : "0";
+  document.getElementById("progressText").textContent = total ? done + " of " + total + " items added" : "Your list is empty.";
+
+  document.getElementById("listBox").innerHTML = total ? groceryList.map((x, i) => `
+    <div class="row ${x.done ? "done" : ""}">
+      <input type="checkbox" ${x.done ? "checked" : ""} onchange="toggleItem(${i})">
+      <div class="name"><strong>${esc(x.name)}</strong><div class="muted">${esc(x.qty)}</div></div>
+      <button class="small ghost" onclick="removeItem(${i})">✕</button>
+    </div>`).join("") : "<p class='muted'>Nothing here yet.</p>";
+
+  document.getElementById("pantryBox").innerHTML = pantry.length ? pantry.map((x, i) => `
+    <div class="row">
+      <div class="name">${esc(x.name)}</div>
+      <button class="small ghost" onclick="usedUp(${i})">Used up</button>
+    </div>`).join("") : "<p class='muted'>Pantry is empty.</p>";
+}
+render();
+</script>
+</body>
+</html>
