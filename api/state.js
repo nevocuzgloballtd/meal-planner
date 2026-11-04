@@ -8,14 +8,12 @@ function userKey(req) {
     pass = decodeURIComponent(String(req.headers['x-pass'] || ''));
   } catch (e) {}
   if (name.length < 2 || pass.length < 4) return null;
-  return crypto.createHmac('sha256', process.env.APP_SECRET)
-    .update(name + ':' + pass).digest('hex');
+  return crypto.scryptSync(name + ':' + pass, 'meal-planner-fixed-salt-v1', 32).toString('hex');
 }
 
 export default async function handler(req, res) {
   const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL;
   if (!dbUrl) return res.status(500).json({ error: 'Database is not connected yet.' });
-  if (!process.env.APP_SECRET) return res.status(500).json({ error: 'APP_SECRET is missing on the server.' });
 
   const key = userKey(req);
   if (!key) return res.status(401).json({ error: 'Enter a name (2+ letters) and a passcode (4+ characters).' });
