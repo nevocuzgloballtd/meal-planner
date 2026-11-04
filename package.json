@@ -1,0 +1,7 @@
+{
+  "name": "meal-planner",
+  "type": "module",
+  "dependencies": {
+    "@neondatabase/serverless": "latest"
+  }
+}
