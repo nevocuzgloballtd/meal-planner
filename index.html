@@ -2,240 +2,450 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Meal Planner</title>
 <style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: system-ui, sans-serif; background: #fdf3ef; color: #222; padding-bottom: 70px; }
-  header { text-align: center; padding: 14px; font-weight: 600; background: #fff; }
-  main { padding: 14px; max-width: 520px; margin: 0 auto; }
-  .screen { display: none; }
-  .screen.active { display: block; }
-  input[type=text] { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
-  button { font-size: 16px; padding: 12px; border: 0; border-radius: 10px; background: #6dbb7a; color: #fff; cursor: pointer; }
-  button.full { width: 100%; margin-top: 10px; }
-  button.ghost { background: #fff; color: #3b8f4a; border: 1px solid #6dbb7a; }
-  button.small { padding: 6px 10px; font-size: 14px; }
-  .card { background: #fff; border-radius: 14px; padding: 12px; margin-top: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-  .card img { width: 100%; border-radius: 10px; }
-  .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eee; }
-  .row:last-child { border-bottom: 0; }
-  .row .name { flex: 1; }
-  .done .name { text-decoration: line-through; color: #999; }
-  .results .card { display: flex; gap: 10px; align-items: center; cursor: pointer; }
-  .results img { width: 70px; height: 70px; object-fit: cover; }
-  nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; background: #fff; border-top: 1px solid #eee; }
-  nav button { flex: 1; background: #fff; color: #555; border-radius: 0; font-size: 14px; }
-  nav button.active { background: #6dbb7a; color: #fff; }
-  .muted { color: #777; font-size: 14px; }
-  .bar { height: 10px; background: #e5e5e5; border-radius: 6px; overflow: hidden; }
-  .bar div { height: 100%; background: #6dbb7a; width: 0; }
+:root{--green:#4fa863;--green-d:#3b8a4e;--green-l:#e6f4e9;--bg:#fdf6f1;--text:#1f2a24;--muted:#7a847d;--warn:#d98a1c;--warn-l:#fff1d8;--line:#eee6df}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+button{font:inherit;cursor:pointer;border:0}
+input,select{font:inherit}
+header{position:sticky;top:0;z-index:5;background:linear-gradient(135deg,#5fb36f,#3f9a55);color:#fff;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 16px;display:flex;justify-content:space-between;align-items:center;border-radius:0 0 22px 22px;box-shadow:0 4px 14px rgba(63,154,85,.25)}
+header h1{margin:0;font-size:20px}
+#status{font-size:12px;opacity:.9}
+main{max-width:560px;margin:0 auto;padding:16px 16px 100px}
+.screen{display:none}.screen.active{display:block}
+.card{background:#fff;border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(60,40,20,.06)}
+h2{margin:0 0 4px;font-size:22px}
+h3{margin:18px 0 8px;font-size:17px}
+h4{margin:14px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--green-d)}
+.muted,small{color:var(--muted)}
+small{display:block;font-size:13px}
+.actions{display:grid;gap:10px;margin:14px 0 18px}
+.action{display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px 16px;text-align:left;font-size:17px;font-weight:600;color:var(--text);box-shadow:0 2px 10px rgba(60,40,20,.06)}
+.action .ic{width:46px;height:46px;border-radius:14px;background:var(--green-l);display:grid;place-items:center;font-size:24px;flex:none}
+.action small{font-weight:400}
+.field{display:flex;gap:8px;margin-bottom:12px}
+input[type=text],input[type=password]{flex:1;width:100%;min-width:0;padding:13px 14px;border:1.5px solid var(--line);border-radius:14px;background:#fff;font-size:16px;outline:none}
+input[type=text]:focus,input[type=password]:focus{border-color:var(--green)}
+.btn{width:100%;padding:14px;border-radius:14px;background:var(--green);color:#fff;font-weight:600;font-size:16px;margin-top:10px}
+.btn.ghost{background:#fff;color:var(--green-d);border:1.5px solid var(--green)}
+.btn:disabled{background:#cfd8d1;color:#fff}
+.field .btn{width:auto;margin:0;padding:0 18px}
+.dayrow{display:flex;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);align-items:flex-start}
+.dayrow:last-child{border:0}
+.day{width:38px;font-weight:700;color:var(--green-d);padding-top:4px}
+.meals{flex:1;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mealwrap{display:inline-flex;align-items:center;background:var(--green-l);border-radius:20px;padding:4px 4px 4px 12px;font-size:14px}
+.mealwrap span{cursor:pointer}
+.x{background:none;color:#aaa;font-size:15px;padding:6px 9px}
+.mini{background:var(--green-l);color:var(--green-d);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.mini.warn{background:var(--warn-l);color:var(--warn)}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row:last-child{border:0}
+.iname{flex:1;min-width:0}
+.iname b{display:block}
+.rcard{display:flex;gap:12px;align-items:center;background:#fff;border-radius:18px;padding:10px;margin-bottom:12px;box-shadow:0 2px 10px rgba(60,40,20,.06);cursor:pointer}
+.rcard img{width:84px;height:84px;object-fit:cover;border-radius:14px;flex:none;background:var(--green-l)}
+.rcard>div{flex:1;min-width:0}
+.meta{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.chip{font-size:12px;padding:3px 9px;border-radius:12px}
+.chip.have{background:var(--green-l);color:var(--green-d)}
+.chip.need{background:var(--warn-l);color:var(--warn)}
+.tabs{display:flex;background:#efe6df;border-radius:14px;padding:4px;margin-bottom:14px}
+.tabs button{flex:1;padding:10px;border-radius:11px;background:none;font-weight:600;color:var(--muted)}
+.tabs button.on{background:#fff;color:var(--green-d);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.bar{height:10px;background:#e6ded7;border-radius:6px;overflow:hidden}
+.bar div{height:100%;width:0;background:var(--green);transition:width .3s}
+.item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border:0}
+.item.done .iname{opacity:.45;text-decoration:line-through}
+.chk input{display:none}
+.chk span{display:block;width:26px;height:26px;border-radius:50%;border:2px solid #cfd8d1;background:#fff;cursor:pointer}
+.chk input:checked+span{background:var(--green);border-color:var(--green);position:relative}
+.chk input:checked+span::after{content:"✓";color:#fff;position:absolute;inset:0;display:grid;place-items:center;font-size:15px}
+.empty{text-align:center;color:var(--muted);padding:26px 10px}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:none;padding:9px 0 8px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav .ni{font-size:22px}
+nav button.active{color:var(--green-d);font-weight:700}
+.sheet{position:fixed;inset:0;z-index:10;background:var(--bg);overflow-y:auto}
+.sheet .close{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;z-index:11;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.95);font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.hero{width:100%;height:230px;object-fit:cover;display:block;background:var(--green-l)}
+.pad{max-width:560px;margin:0 auto;padding:16px 16px 40px}
+.tag{border-radius:12px;padding:7px 12px;font-size:13px;font-weight:600}
+.tag.have{background:var(--green-l);color:var(--green-d)}
+.tag.need{background:var(--warn-l);color:var(--warn)}
+.planrow{display:flex;gap:8px;margin-top:10px}
+.planrow select{padding:0 12px;border-radius:14px;border:1.5px solid var(--line);background:#fff}
+.planrow .btn{margin:0}
+ol{padding-left:20px;line-height:1.5}
+ol li{margin-bottom:8px}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+.login{min-height:100vh;display:grid;place-items:center;padding:20px}
+.login .card{width:100%;max-width:380px;padding:26px;text-align:center}
+.login .big{font-size:48px}
+.err{color:#c0392b;font-size:14px;min-height:20px;margin-top:8px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%) translateY(20px);background:#26332b;color:#fff;padding:11px 18px;border-radius:24px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:90%;text-align:center}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.link{background:none;color:var(--muted);text-decoration:underline;font-size:13px;margin:10px auto;display:block}
 </style>
 </head>
 <body>
-<header id="title">Meal Planner</header>
-<main>
 
-  <!-- SCREEN 1: MEAL PLANNER -->
-  <section id="planner" class="screen active">
-    <input type="text" id="searchBox" placeholder="Search a dish, e.g. black beans and rice">
-    <button class="full" onclick="searchDish()">Search recipes</button>
-    <div id="results" class="results"></div>
-    <div id="recipeView"></div>
-  </section>
+<div id="login" class="login" hidden>
+  <div class="card">
+    <div class="big">🥘</div>
+    <h2>Meal Planner</h2>
+    <p class="muted">Sign in or create your account. Use any name and a passcode you will remember.</p>
+    <div class="field"><input type="text" id="uName" placeholder="Your name" autocomplete="username"></div>
+    <div class="field"><input type="password" id="uPass" placeholder="Passcode (4+ characters)" autocomplete="current-password"></div>
+    <button class="btn" onclick="signIn()">Continue</button>
+    <div class="err" id="loginErr"></div>
+    <small>New name = new account. If you mistype your passcode you will see an empty account.</small>
+  </div>
+</div>
 
-  <!-- SCREEN 2: GROCERY LIST -->
-  <section id="grocery" class="screen">
-    <div class="bar"><div id="barFill"></div></div>
-    <p class="muted" id="progressText"></p>
-    <div class="card" id="listBox"></div>
-    <div style="display:flex; gap:8px; margin-top:12px;">
-      <input type="text" id="newItem" placeholder="Add an item">
-      <button onclick="addManual()">Add</button>
-    </div>
-    <button class="full ghost" onclick="clearBought()">Move bought items to pantry</button>
-  </section>
+<div id="app" hidden>
+  <header><h1 id="title">Home</h1><span id="status"></span></header>
+  <main>
 
-  <!-- SCREEN 3: PANTRY -->
-  <section id="pantry" class="screen">
-    <p class="muted">What you have at home. Tap "Used up" while cooking.</p>
-    <div class="card" id="pantryBox"></div>
-    <div style="display:flex; gap:8px; margin-top:12px;">
-      <input type="text" id="newPantry" placeholder="Add to pantry">
-      <button onclick="addPantryManual()">Add</button>
-    </div>
-  </section>
+    <section id="s-home" class="screen">
+      <h2 id="hello"></h2>
+      <p class="muted" style="margin:0">What are we cooking this week?</p>
+      <div class="actions">
+        <button class="action" onclick="show('find')"><span class="ic">📖</span><span>Plan my meals<small>Find a recipe and build your list</small></span></button>
+        <button class="action" onclick="show('cook')"><span class="ic">🍅</span><span>What can I cook?<small>Start from an ingredient in the store</small></span></button>
+        <button class="action" onclick="show('list')"><span class="ic">🛒</span><span>My grocery list<small id="homeCount"></small></span></button>
+      </div>
+      <div class="card"><h3 style="margin-top:0">This week's meals</h3><div id="planBox"></div></div>
+      <div class="card"><h3 style="margin-top:0">Running low</h3><div id="lowBox"></div></div>
+      <button class="link" onclick="signOut()">Sign out</button>
+    </section>
 
-</main>
+    <section id="s-find" class="screen">
+      <div class="field"><input type="text" id="findQ" placeholder="e.g. black beans and rice"><button class="btn" onclick="searchRecipes()">Search</button></div>
+      <div id="findOut"><div class="empty">Search for a dish to see recipes with time, servings and ingredients.</div></div>
+    </section>
 
-<nav>
-  <button id="nav-planner" class="active" onclick="show('planner')">Planner</button>
-  <button id="nav-grocery" onclick="show('grocery')">Grocery</button>
-  <button id="nav-pantry" onclick="show('pantry')">Pantry</button>
-</nav>
+    <section id="s-list" class="screen">
+      <div class="tabs"><button id="tabBuy" onclick="setTab('buy')">To buy</button><button id="tabHome" onclick="setTab('home')">At home</button></div>
+      <div id="buyPane">
+        <div class="card">
+          <div class="bar"><div id="barFill"></div></div>
+          <p class="muted" id="progText" style="margin:8px 0 0"></p>
+        </div>
+        <div class="card" id="buyBox"></div>
+        <div class="field"><input type="text" id="newItem" placeholder="Add an item"><button class="btn" onclick="addItem()">Add</button></div>
+        <button class="btn ghost" onclick="finishShopping()">Done shopping: move checked items home</button>
+      </div>
+      <div id="homePane">
+        <p class="muted">What you already have. Mark things as low or used up while cooking.</p>
+        <div class="card" id="homeBox"></div>
+        <div class="field"><input type="text" id="newPantry" placeholder="Add something you have"><button class="btn" onclick="addPantry()">Add</button></div>
+      </div>
+    </section>
+
+    <section id="s-cook" class="screen">
+      <div class="card" style="background:var(--green-l);box-shadow:none">
+        <b>Standing in the store?</b>
+        <div class="muted" style="font-size:14px">Type what looks good and see what you can make.</div>
+      </div>
+      <div class="field"><input type="text" id="cookQ" placeholder="e.g. tomatoes"><button class="btn" onclick="cookSearch()">Go</button></div>
+      <div id="cookOut"></div>
+    </section>
+
+  </main>
+  <nav>
+    <button data-s="home" onclick="show('home')"><span class="ni">🏠</span>Home</button>
+    <button data-s="find" onclick="show('find')"><span class="ni">📖</span>Recipes</button>
+    <button data-s="list" onclick="show('list')"><span class="ni">🛒</span>Grocery</button>
+    <button data-s="cook" onclick="show('cook')"><span class="ni">🍅</span>Cook</button>
+  </nav>
+  <div class="sheet" id="sheet" hidden>
+    <button class="close" onclick="closeSheet()">✕</button>
+    <div id="sheetBody"></div>
+  </div>
+  <div id="toast"></div>
+</div>
 
 <script>
-const API = "https://www.themealdb.com/api/json/v1/1/";
+const $ = s => document.querySelector(s);
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const LOADING = '<div class="empty">Loading...</div>';
+let user = '', pass = '';
+let state = { list: [], pantry: [], plan: [] };
+let listTab = 'buy', recipe = null, planDay = 'Mon', saveTimer, toastTimer;
 
-// ---------- Saved data (stays on the phone) ----------
-function load(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || []; } catch (e) { return []; }
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k,v){ try { localStorage.setItem(k,v); } catch(e){} }
+function lsDel(k){ try { localStorage.removeItem(k); } catch(e){} }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function norm(n){ return String(n||'').toLowerCase().trim().replace(/s$/,''); }
+function cap(s){ s=String(s||''); return s.charAt(0).toUpperCase()+s.slice(1); }
+function cleanAisle(a){ if(!a||a==='?') return 'Other'; return String(a).split(';')[0].trim()||'Other'; }
+function inArr(arr,name){ return arr.some(x=>norm(x.name)===norm(name)); }
+function inPantry(name){ return inArr(state.pantry,name); }
+function normalizeState(d){
+  return { list:Array.isArray(d&&d.list)?d.list:[], pantry:Array.isArray(d&&d.pantry)?d.pantry:[], plan:Array.isArray(d&&d.plan)?d.plan:[] };
 }
-function save(key, val) {
-  try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200); }
+function setStatus(s){ $('#status').textContent=s; }
+
+// ---------- Server ----------
+async function api(path, opts){
+  opts = opts || {};
+  const headers = { 'Content-Type':'application/json', 'x-user':encodeURIComponent(user), 'x-pass':encodeURIComponent(pass) };
+  const r = await fetch(path, Object.assign({}, opts, { headers }));
+  let data = {};
+  try { data = await r.json(); } catch(e){}
+  if(!r.ok) throw new Error(data.error || data.message || 'Something went wrong.');
+  return data;
 }
-let groceryList = load("groceryList"); // {name, qty, done}
-let pantry = load("pantry");           // {name}
+function persist(){
+  lsSet('mp_state_'+user, JSON.stringify(state));
+  setStatus('Saving...');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(push, 600);
+}
+async function push(){
+  try { await api('/api/state',{method:'PUT',body:JSON.stringify({data:state})}); setStatus('Saved ✓'); }
+  catch(e){ setStatus('Offline'); }
+}
+
+// ---------- Sign in ----------
+function showLogin(msg){ $('#app').hidden=true; $('#login').hidden=false; $('#loginErr').textContent=msg||''; }
+async function signIn(){
+  const n=$('#uName').value.trim(), p=$('#uPass').value;
+  if(n.length<2||p.length<4){ $('#loginErr').textContent='Name needs 2+ letters and passcode 4+ characters.'; return; }
+  user=n; pass=p; $('#loginErr').textContent='Signing in...';
+  try {
+    const d = await api('/api/state');
+    state = normalizeState(d.data);
+    lsSet('mp_user',user); lsSet('mp_pass',pass);
+    start();
+  } catch(e){ $('#loginErr').textContent=e.message; }
+}
+function signOut(){ lsDel('mp_user'); lsDel('mp_pass'); location.reload(); }
+function start(){ $('#login').hidden=true; $('#app').hidden=false; setStatus(''); show('home'); }
+async function boot(){
+  user=lsGet('mp_user')||''; pass=lsGet('mp_pass')||'';
+  if(!user||!pass){ showLogin(''); return; }
+  try {
+    const d = await api('/api/state');
+    state = normalizeState(d.data); start();
+  } catch(e){
+    const c = lsGet('mp_state_'+user);
+    if(c){ try { state=normalizeState(JSON.parse(c)); start(); setStatus('Offline'); return; } catch(x){} }
+    showLogin(e.message);
+  }
+}
 
 // ---------- Screens ----------
-function show(name) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  document.getElementById(name).classList.add("active");
-  document.querySelectorAll("nav button").forEach(b => b.classList.remove("active"));
-  document.getElementById("nav-" + name).classList.add("active");
-  render();
+function show(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $('#s-'+name).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.s===name));
+  const titles={home:'Meal Planner',find:'Find a recipe',list:'Grocery list',cook:'What can I cook?'};
+  $('#title').textContent=titles[name];
+  renderAll(); window.scrollTo(0,0);
 }
+function renderAll(){ renderHome(); renderList(); }
 
-// ---------- Recipe search ----------
-async function searchDish() {
-  const q = document.getElementById("searchBox").value.trim();
-  const box = document.getElementById("results");
-  document.getElementById("recipeView").innerHTML = "";
-  if (!q) return;
-  box.innerHTML = "<p class='muted'>Searching...</p>";
-  try {
-    const res = await fetch(API + "search.php?s=" + encodeURIComponent(q));
-    const data = await res.json();
-    if (!data.meals) {
-      box.innerHTML = "<p class='muted'>No recipes found. Try a simpler word like 'beans' or 'chicken'.</p>";
-      return;
-    }
-    box.innerHTML = data.meals.map(m => `
-      <div class="card" onclick="openRecipe('${m.idMeal}')">
-        <img src="${m.strMealThumb}/preview" alt="">
-        <div><strong>${m.strMeal}</strong><div class="muted">${m.strCategory || ""} ${m.strArea ? "· " + m.strArea : ""}</div></div>
-      </div>`).join("");
-  } catch (e) {
-    box.innerHTML = "<p class='muted'>Could not reach the recipe service. Check your internet.</p>";
-  }
+function renderHome(){
+  $('#hello').textContent='Hi, '+cap(user)+' 👋';
+  const open=state.list.filter(x=>!x.done).length;
+  $('#homeCount').textContent=open?open+' items to buy':'Nothing to buy right now';
+  $('#planBox').innerHTML = DAYS.map(d=>{
+    const meals=state.plan.filter(p=>p.day===d);
+    const html=meals.length?meals.map(m=>'<span class="mealwrap"><span onclick="openRecipe('+Number(m.recipeId)+')">'+esc(m.title)+'</span><button class="x" onclick="removePlan(\''+m.id+'\')">✕</button></span>').join(''):'<span class="muted">Free</span>';
+    return '<div class="dayrow"><div class="day">'+d+'</div><div class="meals">'+html+'</div></div>';
+  }).join('');
+  const low=state.pantry.filter(p=>p.low);
+  $('#lowBox').innerHTML = low.length ? low.map(p=>'<div class="row"><div class="iname"><b>'+esc(cap(p.name))+'</b></div><button class="mini warn" onclick="lowToList(\''+p.id+'\')">＋ Add to list</button></div>').join('') : '<div class="muted">Nothing running low. 🎉</div>';
 }
-
-let currentRecipe = null;
-async function openRecipe(id) {
-  try {
-    const res = await fetch(API + "lookup.php?i=" + id);
-    const data = await res.json();
-    const m = data.meals[0];
-    const ingredients = [];
-    for (let i = 1; i <= 20; i++) {
-      const name = (m["strIngredient" + i] || "").trim();
-      const qty = (m["strMeasure" + i] || "").trim();
-      if (name) ingredients.push({ name, qty });
-    }
-    currentRecipe = { title: m.strMeal, ingredients };
-    document.getElementById("results").innerHTML = "";
-    document.getElementById("recipeView").innerHTML = `
-      <div class="card">
-        <img src="${m.strMealThumb}" alt="">
-        <h2>${m.strMeal}</h2>
-        <h3>Ingredients</h3>
-        <ul>${ingredients.map(x => `<li>${x.qty} ${x.name}</li>`).join("")}</ul>
-        <button class="full" onclick="addRecipeToList()">+ Add ingredients to Grocery List</button>
-        <h3>Instructions</h3>
-        <p style="white-space:pre-wrap">${m.strInstructions}</p>
-      </div>`;
-  } catch (e) {
-    alert("Could not load that recipe.");
-  }
-}
-
-// ---------- Core logic: recipe ingredients minus pantry ----------
-function has(list, name) {
-  return list.some(x => x.name.toLowerCase() === name.toLowerCase());
-}
-function addRecipeToList() {
-  let added = 0, skipped = 0;
-  currentRecipe.ingredients.forEach(ing => {
-    if (has(pantry, ing.name)) { skipped++; return; }
-    if (has(groceryList, ing.name)) return;
-    groceryList.push({ name: ing.name, qty: ing.qty, done: false });
-    added++;
-  });
-  save("groceryList", groceryList);
-  alert(added + " added to your list. " + skipped + " skipped because you already have them.");
-  show("grocery");
+function removePlan(id){ state.plan=state.plan.filter(p=>p.id!==id); persist(); renderHome(); }
+function lowToList(id){
+  const p=state.pantry.find(x=>x.id===id); if(!p) return;
+  if(!inArr(state.list,p.name)) state.list.push({id:uid(),name:p.name,amount:'',aisle:p.aisle||'Other',done:false});
+  persist(); toast(cap(p.name)+' added to your list'); renderAll();
 }
 
 // ---------- Grocery list ----------
-function toggleItem(i) {
-  groceryList[i].done = !groceryList[i].done;
-  save("groceryList", groceryList);
-  render();
+function setTab(t){ listTab=t; renderList(); }
+function renderList(){
+  $('#tabBuy').classList.toggle('on',listTab==='buy');
+  $('#tabHome').classList.toggle('on',listTab==='home');
+  $('#buyPane').hidden=listTab!=='buy';
+  $('#homePane').hidden=listTab!=='home';
+
+  const L=state.list, done=L.filter(x=>x.done).length;
+  $('#barFill').style.width=(L.length?done/L.length*100:0)+'%';
+  $('#progText').textContent=L.length?done+' of '+L.length+' in your basket':'Your list is empty';
+  const groups={};
+  L.forEach(x=>{ const g=x.aisle||'Other'; (groups[g]=groups[g]||[]).push(x); });
+  const names=Object.keys(groups).sort((a,b)=>a==='Other'?1:b==='Other'?-1:a.localeCompare(b));
+  $('#buyBox').innerHTML = names.length ? names.map(g=>'<h4>'+esc(g)+'</h4>'+groups[g].map(x=>
+    '<div class="item '+(x.done?'done':'')+'">'+
+    '<label class="chk"><input type="checkbox" '+(x.done?'checked':'')+' onchange="toggleItem(\''+x.id+'\')"><span></span></label>'+
+    '<div class="iname"><b>'+esc(cap(x.name))+'</b><small>'+esc(x.amount)+'</small></div>'+
+    '<button class="mini" onclick="haveAtHome(\''+x.id+'\')">🏠 Have it</button>'+
+    '<button class="x" onclick="removeItem(\''+x.id+'\')">✕</button></div>'
+  ).join('')).join('') : '<div class="empty">Nothing here yet. Add a recipe\'s ingredients or type an item below.</div>';
+
+  const P=state.pantry;
+  $('#homeBox').innerHTML = P.length ? P.map(p=>
+    '<div class="row"><div class="iname"><b>'+esc(cap(p.name))+'</b>'+(p.low?'<small style="color:var(--warn)">Running low</small>':'')+'</div>'+
+    '<button class="mini '+(p.low?'warn':'')+'" onclick="toggleLow(\''+p.id+'\')">'+(p.low?'Low ✓':'Low')+'</button>'+
+    '<button class="mini" onclick="usedUp(\''+p.id+'\')">Used up</button></div>'
+  ).join('') : '<div class="empty">Nothing here yet. Tap "Have it" on a list item, or add below.</div>';
 }
-function removeItem(i) {
-  groceryList.splice(i, 1);
-  save("groceryList", groceryList);
-  render();
+function toggleItem(id){ const x=state.list.find(i=>i.id===id); if(x){ x.done=!x.done; persist(); renderList(); } }
+function removeItem(id){ state.list=state.list.filter(i=>i.id!==id); persist(); renderList(); renderHome(); }
+function haveAtHome(id){
+  const x=state.list.find(i=>i.id===id); if(!x) return;
+  if(!inPantry(x.name)) state.pantry.push({id:uid(),name:x.name,aisle:x.aisle,low:false});
+  state.list=state.list.filter(i=>i.id!==id);
+  persist(); toast('Moved to At home'); renderAll();
 }
-function addManual() {
-  const box = document.getElementById("newItem");
-  const name = box.value.trim();
-  if (!name || has(groceryList, name)) return;
-  groceryList.push({ name, qty: "", done: false });
-  box.value = "";
-  save("groceryList", groceryList);
-  render();
+function addItem(){
+  const b=$('#newItem'), name=b.value.trim().toLowerCase();
+  if(!name) return;
+  if(!inArr(state.list,name)) state.list.push({id:uid(),name:name,amount:'',aisle:'Other',done:false});
+  b.value=''; persist(); renderAll();
 }
-function clearBought() {
-  groceryList.filter(x => x.done).forEach(x => {
-    if (!has(pantry, x.name)) pantry.push({ name: x.name });
+function finishShopping(){
+  const bought=state.list.filter(x=>x.done);
+  if(!bought.length){ toast('Check off what you bought first'); return; }
+  bought.forEach(x=>{
+    const p=state.pantry.find(q=>norm(q.name)===norm(x.name));
+    if(p){ p.low=false; } else state.pantry.push({id:uid(),name:x.name,aisle:x.aisle,low:false});
   });
-  groceryList = groceryList.filter(x => !x.done);
-  save("groceryList", groceryList);
-  save("pantry", pantry);
-  render();
+  state.list=state.list.filter(x=>!x.done);
+  persist(); toast(bought.length+' items moved to At home'); renderAll();
+}
+function addPantry(){
+  const b=$('#newPantry'), name=b.value.trim().toLowerCase();
+  if(!name) return;
+  if(!inPantry(name)) state.pantry.push({id:uid(),name:name,aisle:'Other',low:false});
+  b.value=''; persist(); renderAll();
+}
+function toggleLow(id){ const p=state.pantry.find(x=>x.id===id); if(p){ p.low=!p.low; persist(); renderAll(); } }
+function usedUp(id){
+  const p=state.pantry.find(x=>x.id===id); if(!p) return;
+  state.pantry=state.pantry.filter(x=>x.id!==id);
+  if(!inArr(state.list,p.name)) state.list.push({id:uid(),name:p.name,amount:'',aisle:p.aisle||'Other',done:false});
+  persist(); toast(cap(p.name)+' used up, added to your list'); renderAll();
 }
 
-// ---------- Pantry ----------
-function usedUp(i) {
-  pantry.splice(i, 1);
-  save("pantry", pantry);
-  render();
-}
-function addPantryManual() {
-  const box = document.getElementById("newPantry");
-  const name = box.value.trim();
-  if (!name || has(pantry, name)) return;
-  pantry.push({ name });
-  box.value = "";
-  save("pantry", pantry);
-  render();
+// ---------- Find a recipe ----------
+async function searchRecipes(){
+  const q=$('#findQ').value.trim(); if(!q) return;
+  $('#findOut').innerHTML=LOADING;
+  try {
+    const d=await api('/api/recipes?mode=search&q='+encodeURIComponent(q));
+    const rs=d.results||[];
+    $('#findOut').innerHTML = rs.length ? rs.map(r=>
+      '<div class="rcard" onclick="openRecipe('+Number(r.id)+')">'+(r.image?'<img src="'+esc(r.image)+'" alt="">':'<img alt="">')+
+      '<div><b>'+esc(r.title)+'</b><div class="meta"><span>⏱ '+(r.readyInMinutes||'?')+' min</span><span>🍽 '+(r.servings||'?')+' servings</span></div></div></div>'
+    ).join('') : '<div class="empty">No recipes found. Try different words.</div>';
+  } catch(e){ $('#findOut').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
 }
 
-// ---------- Draw the lists ----------
-function esc(s) {
-  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+// ---------- What can I cook ----------
+function chips(arr,cls,max){
+  const shown=arr.slice(0,max).map(n=>'<span class="chip '+cls+'">'+esc(n)+'</span>').join('');
+  return shown+(arr.length>max?'<span class="chip '+cls+'">+'+(arr.length-max)+' more</span>':'');
 }
-function render() {
-  const total = groceryList.length;
-  const done = groceryList.filter(x => x.done).length;
-  document.getElementById("barFill").style.width = total ? (done / total * 100) + "%" : "0";
-  document.getElementById("progressText").textContent = total ? done + " of " + total + " items added" : "Your list is empty.";
-
-  document.getElementById("listBox").innerHTML = total ? groceryList.map((x, i) => `
-    <div class="row ${x.done ? "done" : ""}">
-      <input type="checkbox" ${x.done ? "checked" : ""} onchange="toggleItem(${i})">
-      <div class="name"><strong>${esc(x.name)}</strong><div class="muted">${esc(x.qty)}</div></div>
-      <button class="small ghost" onclick="removeItem(${i})">✕</button>
-    </div>`).join("") : "<p class='muted'>Nothing here yet.</p>";
-
-  document.getElementById("pantryBox").innerHTML = pantry.length ? pantry.map((x, i) => `
-    <div class="row">
-      <div class="name">${esc(x.name)}</div>
-      <button class="small ghost" onclick="usedUp(${i})">Used up</button>
-    </div>`).join("") : "<p class='muted'>Pantry is empty.</p>";
+async function cookSearch(){
+  const q=$('#cookQ').value.trim(); if(!q) return;
+  $('#cookOut').innerHTML=LOADING;
+  try {
+    const d=await api('/api/recipes?mode=ingredient&q='+encodeURIComponent(q));
+    const rs=Array.isArray(d)?d:[];
+    $('#cookOut').innerHTML = rs.length ? rs.map(r=>{
+      const miss=(r.missedIngredients||[]).map(i=>i.name);
+      const have=miss.filter(n=>inPantry(n)), need=miss.filter(n=>!inPantry(n));
+      return '<div class="rcard" onclick="openRecipe('+Number(r.id)+')">'+(r.image?'<img src="'+esc(r.image)+'" alt="">':'<img alt="">')+
+        '<div><b>'+esc(r.title)+'</b>'+
+        (have.length?'<div class="chips"><small style="width:100%">You have</small>'+chips(have,'have',4)+'</div>':'')+
+        (need.length?'<div class="chips"><small style="width:100%">Still need</small>'+chips(need,'need',4)+'</div>':'<div class="chips"><span class="chip have">You have everything!</span></div>')+
+        '</div></div>';
+    }).join('') : '<div class="empty">No ideas found for that. Try another ingredient.</div>';
+  } catch(e){ $('#cookOut').innerHTML='<div class="empty">'+esc(e.message)+'</div>'; }
 }
-render();
+
+// ---------- Recipe detail ----------
+async function openRecipe(id){
+  $('#sheet').hidden=false; document.body.style.overflow='hidden';
+  $('#sheetBody').innerHTML=LOADING;
+  try {
+    const d=await api('/api/recipes?mode=info&id='+encodeURIComponent(id));
+    const seen={}, ings=[];
+    (d.extendedIngredients||[]).forEach(e=>{
+      const n=String(e.nameClean||e.name||'').toLowerCase().trim();
+      if(!n||seen[n]) return; seen[n]=1;
+      ings.push({name:n,text:e.original||n,aisle:cleanAisle(e.aisle)});
+    });
+    let steps=[];
+    const ai=d.analyzedInstructions&&d.analyzedInstructions[0];
+    if(ai&&ai.steps) steps=ai.steps.map(s=>s.step);
+    else if(d.instructions) steps=String(d.instructions).replace(/<[^>]+>/g,'').split(/\n+/).filter(Boolean);
+    recipe={id:d.id,title:d.title,image:d.image,minutes:d.readyInMinutes,servings:d.servings,ings:ings,steps:steps};
+    renderSheet();
+  } catch(e){ $('#sheetBody').innerHTML='<div class="pad"><div class="empty">'+esc(e.message)+'</div></div>'; }
+}
+function renderSheet(){
+  if(!recipe) return;
+  const missing=recipe.ings.filter(x=>!inPantry(x.name)).length;
+  $('#sheetBody').innerHTML =
+    (recipe.image?'<img class="hero" src="'+esc(recipe.image)+'" alt="">':'')+
+    '<div class="pad"><h2>'+esc(recipe.title)+'</h2>'+
+    '<div class="meta"><span>⏱ '+(recipe.minutes||'?')+' min</span><span>🍽 '+(recipe.servings||'?')+' servings</span></div>'+
+    '<h3>Ingredients</h3><div class="card" style="padding:4px 14px">'+
+    recipe.ings.map((x,i)=>{
+      const h=inPantry(x.name);
+      return '<div class="row"><div class="iname"><b>'+esc(cap(x.name))+'</b><small>'+esc(x.text)+'</small></div>'+
+        '<button class="tag '+(h?'have':'need')+'" onclick="toggleHome('+i+')">'+(h?'✓ At home':'Need')+'</button></div>';
+    }).join('')+'</div>'+
+    '<p class="hint">Tap a tag to mark an ingredient as at home or not.</p>'+
+    '<button class="btn" '+(missing?'':'disabled')+' onclick="addMissing()">'+(missing?'＋ Add '+missing+' missing to grocery list':'✓ You have everything')+'</button>'+
+    '<div class="planrow"><select onchange="planDay=this.value">'+DAYS.map(d=>'<option '+(d===planDay?'selected':'')+'>'+d+'</option>').join('')+'</select>'+
+    '<button class="btn ghost" onclick="addToPlan()">Add to meal plan</button></div>'+
+    (recipe.steps.length?'<h3>Method</h3><ol>'+recipe.steps.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol>':'')+
+    '</div>';
+}
+function toggleHome(i){
+  const x=recipe.ings[i];
+  if(inPantry(x.name)) state.pantry=state.pantry.filter(p=>norm(p.name)!==norm(x.name));
+  else state.pantry.push({id:uid(),name:x.name,aisle:x.aisle,low:false});
+  persist(); renderSheet();
+}
+function addMissing(){
+  let n=0;
+  recipe.ings.forEach(x=>{
+    if(inPantry(x.name)||inArr(state.list,x.name)) return;
+    state.list.push({id:uid(),name:x.name,amount:x.text,aisle:x.aisle,done:false}); n++;
+  });
+  persist(); toast(n?n+' items added to your list':'Already on your list'); renderSheet();
+}
+function addToPlan(){
+  state.plan.push({id:uid(),recipeId:recipe.id,title:recipe.title,image:recipe.image||'',day:planDay});
+  persist(); toast('Added to '+planDay);
+}
+function closeSheet(){ $('#sheet').hidden=true; document.body.style.overflow=''; renderAll(); }
+
+// ---------- Enter key ----------
+$('#findQ').addEventListener('keydown',e=>{ if(e.key==='Enter') searchRecipes(); });
+$('#cookQ').addEventListener('keydown',e=>{ if(e.key==='Enter') cookSearch(); });
+$('#newItem').addEventListener('keydown',e=>{ if(e.key==='Enter') addItem(); });
+$('#newPantry').addEventListener('keydown',e=>{ if(e.key==='Enter') addPantry(); });
+$('#uPass').addEventListener('keydown',e=>{ if(e.key==='Enter') signIn(); });
+
+boot();
 </script>
 </body>
 </html>
